@@ -1,0 +1,12 @@
+com\gladurbad\nebula\Nebula.class
+com\gladurbad\nebula\util\PlayerUtil.class
+com\gladurbad\nebula\data\PlayerData$DataStorage.class
+com\gladurbad\nebula\check\movement\Speed.class
+com\gladurbad\nebula\check\combat\Reach.class
+com\gladurbad\nebula\check\movement\Fly.class
+com\gladurbad\nebula\util\MovementUtil.class
+com\gladurbad\nebula\data\PlayerData.class
+com\gladurbad\nebula\check\combat\KillAura.class
+com\gladurbad\nebula\listener\JoinQuitListener.class
+com\gladurbad\nebula\manager\PlayerDataManager.class
+com\gladurbad\nebula\check\Check.class
