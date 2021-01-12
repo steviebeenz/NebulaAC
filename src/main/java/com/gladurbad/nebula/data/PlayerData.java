@@ -26,6 +26,12 @@ public class PlayerData {
         public int speedGroundTicks, speedAirTicks, speedSinceIceTicks, speedSinceUnderBlockTicks, speedSinceSlimeTicks;
         public int speedYportAirTicks, speedLastAirTicks;
         public double speedYportVerbose;
+        public int aim2TotalMoves;
+        public int aim3Verbose;
+        public int aim2Verbose;
+        public long lastAim2Move;
+        public int aim2PosLooks, aim2Looks, aim2Moves;
+        public long lastAimCheck2RotateTime;
         public boolean speedYportShouldCheck, speedYportShouldCheck2;
         public double flyLastGroundY;
         public Location lastHorizontalFlyDistanceLocation;
