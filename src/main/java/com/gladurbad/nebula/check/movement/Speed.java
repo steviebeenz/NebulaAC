@@ -44,12 +44,26 @@ public class Speed extends Check implements Listener {
         if (playerData != null) {
             final PlayerData.DataStorage dataStorage = playerData.getDataStorage();
 
+            this.checkJumpSpeed(event, playerData, dataStorage);
             this.checkYPort(event, playerData, dataStorage);
             this.checkMaximumSpeed(event, playerData, dataStorage);
             this.checkEventSpeed(event, playerData, dataStorage);
         }
     }
 
+    public void checkJumpSpeed(final PlayerMoveEvent event, final PlayerData data, final PlayerData.DataStorage dataStorage) {
+        check: {
+            if (data.getBukkitPlayer().hasPotionEffect(PotionEffectType.JUMP)) break check;
+            if (System.currentTimeMillis() - dataStorage.lastTeleport < 2000L) break check;
+            if (System.currentTimeMillis() - dataStorage.lastDamageTakenTime < 1500L) break check;
+
+            final double deltaY = event.getTo().getY() - event.getFrom().getY();
+
+            if (deltaY > 0.5) {
+                flag(data, "jumpspeed=" + deltaY);
+            }
+        }
+    }
     public void checkYPort(final PlayerMoveEvent event, final PlayerData playerData, final PlayerData.DataStorage dataStorage) {
         if (dataStorage.speedSinceUnderBlockTicks < 40) return;
         if (playerData.getBukkitPlayer().hasPotionEffect(PotionEffectType.JUMP)) return;
@@ -118,6 +132,7 @@ public class Speed extends Check implements Listener {
             dataStorage.speedLastLocation = player.getLocation();return;
         }
         if (System.currentTimeMillis() - dataStorage.lastDamageTakenTime < 1500L) return;
+        if (playerData.getBukkitPlayer().getWalkSpeed() > 0.2F) return;
 
         double speed = 0.0;
 
@@ -140,7 +155,8 @@ public class Speed extends Check implements Listener {
                 dataStorage.speedSinceSlimeTicks + 1 :
                 0;
         dataStorage.speedSinceUnderBlockTicks = collidingBlocks.stream()
-                .anyMatch(block -> block.getLocation().getY() > player.getEyeLocation().getY() - 0.5) ?
+                .anyMatch(block -> block.getLocation().getY() > player.getEyeLocation().getY() - 0.5)
+                || playerData.getBukkitPlayer().getEyeLocation().clone().add(0, 1, 0).getBlock().getType() != Material.AIR ?
                 dataStorage.speedSinceIceTicks + 1 :
                 0;
 
@@ -184,13 +200,18 @@ public class Speed extends Check implements Listener {
         final int shiftedSpeed = (int) Math.round(speed * 100);
 
         if (shiftedSpeed > 100) {
-            if ((dataStorage.speedVerbose += shiftedSpeed > 150 ? 60 : 20) > 100 || shiftedSpeed > 1000) {
+            if ((dataStorage.speedVerbose += shiftedSpeed > 150 ? 60 : 20) > 100 || shiftedSpeed > 200) {
                 dataStorage.speedVerbose = Math.min(350, dataStorage.speedVerbose);
                 flag(playerData, "speed=" + shiftedSpeed + "%");
-                player.teleport(event.getFrom());
+                dataStorage.speedNiggerTPticks = 5;
             }
         } else {
             dataStorage.speedVerbose = Math.max(0, dataStorage.speedVerbose);
+        }
+
+        if (dataStorage.speedNiggerTPticks > 0) {
+            dataStorage.speedNiggerTPticks--;
+            player.teleport(event.getFrom());
         }
 
         dataStorage.speedLastDeltaXZ = deltaXZ;

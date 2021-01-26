@@ -4,6 +4,7 @@ com\gladurbad\nebula\data\PlayerData$DataStorage.class
 com\gladurbad\nebula\check\movement\Speed.class
 com\gladurbad\nebula\check\combat\Reach.class
 com\gladurbad\nebula\check\movement\Fly.class
+com\gladurbad\nebula\util\MathUtil.class
 com\gladurbad\nebula\util\MovementUtil.class
 com\gladurbad\nebula\data\PlayerData.class
 com\gladurbad\nebula\check\combat\KillAura.class

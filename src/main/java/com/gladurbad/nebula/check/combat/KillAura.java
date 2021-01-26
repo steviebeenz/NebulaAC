@@ -3,17 +3,18 @@ package com.gladurbad.nebula.check.combat;
 import com.gladurbad.nebula.Nebula;
 import com.gladurbad.nebula.check.Check;
 import com.gladurbad.nebula.data.PlayerData;
-import org.apache.logging.log4j.message.StringFormattedMessage;
+import com.gladurbad.nebula.util.MathUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class KillAura extends Check implements Listener {
 
@@ -29,6 +30,19 @@ public class KillAura extends Check implements Listener {
             if (playerData != null) {
                 final PlayerData.DataStorage dataStorage = playerData.getDataStorage();
 
+                if (event.getEntity() == dataStorage.bait) {
+                    dataStorage.lastBaitHitTime = System.currentTimeMillis();
+                    if (++dataStorage.baithittimes > 3) {
+                        flag(playerData, "Entity Check");
+                    }
+                    dataStorage.bait.remove();
+                }
+                if (System.currentTimeMillis() - dataStorage.baitTime > 100L && dataStorage.bait != null) {
+                    dataStorage.bait.remove();
+                }
+
+                dataStorage.target = event.getEntity();
+
                 if (event.getDamager().getUniqueId() == playerData.getBukkitPlayer().getUniqueId()) {
                     dataStorage.lastAttackTime = System.currentTimeMillis();
                 }
@@ -37,18 +51,94 @@ public class KillAura extends Check implements Listener {
     }
 
     @EventHandler
-    public void onPlayerMove(final PlayerMoveEvent event) {
+    public void onPlayerMove(final PlayerMoveEvent event)  {
         final PlayerData playerData = Nebula.instance.getPlayerDataManager().getPlayerData(event.getPlayer());
 
         if (playerData != null) {
             final PlayerData.DataStorage dataStorage = playerData.getDataStorage();
 
             if (System.currentTimeMillis() - dataStorage.lastAttackTime > 2000L) return;
+            if (dataStorage.target == null) return;
 
             this.checkAimbotHeuristic1(event, playerData, dataStorage);
             this.checkAimbotHeuristic2(event, playerData, dataStorage);
             this.checkAimbotHeuristic3(event, playerData, dataStorage);
+            this.checkAimbotHeuristic4(event, playerData, dataStorage);
+            this.checkAimbotHeuristic5(event, playerData, dataStorage);
+            this.checkkeepsprint(event, playerData, dataStorage);
+            this.mobCheckLUL(event, playerData, dataStorage);
         }
+    }
+
+    public void mobCheckLUL(final PlayerMoveEvent event, final PlayerData data, final PlayerData.DataStorage dataStorage) {
+        if (System.currentTimeMillis() - dataStorage.lastAttackTime < 100L) {
+            if (System.currentTimeMillis() - dataStorage.baitTime > 1000L) {
+                dataStorage.bait = data.getBukkitPlayer().getWorld().spawnCreature(
+                        data.getBukkitPlayer().getLocation().clone().add(Math.random(), 2.5, Math.random()),
+                        EntityType.BAT
+                );
+                dataStorage.baitTime = System.currentTimeMillis();
+            }
+        }
+    }
+    public void checkkeepsprint(final PlayerMoveEvent event, final PlayerData data, final PlayerData.DataStorage dataStorage) {
+        if (System.currentTimeMillis() - dataStorage.lastAttackTime > 100L) return;
+        if (!(dataStorage.target instanceof Player)) return;
+
+        final double movement = Math.hypot(
+                event.getTo().getX() - event.getFrom().getX(),
+                event.getTo().getZ() - event.getFrom().getZ()
+        );
+
+        final double accel = Math.abs(movement - dataStorage.lastMovmeent);
+
+        if ((data.getBukkitPlayer().isSprinting() || movement > 0.27) && accel < 0.01) {
+            if (++dataStorage.keepsprintSlaveSales > 15) {
+                flag(data, "movement=" + accel);
+            }
+        } else {
+            if (dataStorage.keepsprintSlaveSales > 0) dataStorage.keepsprintSlaveSales -= 3;
+        }
+
+        dataStorage.lastMovmeent = movement;
+    }
+
+    public void checkAimbotHeuristic5(final PlayerMoveEvent event, final PlayerData data, final PlayerData.DataStorage dataStorage) {
+        final float deltaYaw = (event.getTo().getYaw() - event.getFrom().getYaw()) % 360F;
+        final float deltaPitch = event.getTo().getPitch() - event.getFrom().getPitch();
+
+        final float pitchDifference = Math.abs(deltaPitch - dataStorage.aimbot5lastniggerpitch);
+        final float yawDiff = Math.abs(deltaYaw - dataStorage.aimbot5lastyaw);
+
+        final float YAWkjwashgklasfdh = Math.abs(yawDiff - dataStorage.aimbot5yawdiffdiff);
+        final float PITCHiawshfkljasdgfd = Math.abs(pitchDifference - dataStorage.aimbot5pitchdiffdiffasjdhasdkh);
+
+        if (String.valueOf(YAWkjwashgklasfdh).contains("E") || String.valueOf(PITCHiawshfkljasdgfd).contains("E")) {
+            final long diff = System.currentTimeMillis() - dataStorage.aimbot5lastCUM;
+
+            if (diff < 500L) {
+                if (++dataStorage.aim5VERBOShkdagjkahsdgfafad > 15) {
+                    flag(data, "diff=" + diff);
+                }
+            } else {
+                if (dataStorage.aim5VERBOShkdagjkahsdgfafad > 0) dataStorage.aim5VERBOShkdagjkahsdgfafad -= 3;
+            }
+            dataStorage.aimbot5lastCUM = System.currentTimeMillis();
+        }
+
+        dataStorage.aimbot5lastniggerpitch = deltaPitch;
+        dataStorage.aimbot5lastyaw = deltaYaw;
+
+        dataStorage.aimbot5yawdiffdiff = yawDiff;
+        dataStorage.aimbot5pitchdiffdiffasjdhasdkh = pitchDifference;
+    }
+    public void checkAimbotHeuristic4(final PlayerMoveEvent event, final PlayerData data, final PlayerData.DataStorage dataStorage) {
+        final float deltaYaw = event.getTo().getYaw() % 360F - event.getFrom().getYaw() % 360F;
+        final float deltaPitch = Math.abs(event.getTo().getPitch() - event.getFrom().getPitch());
+
+        if (deltaYaw > 15F || deltaPitch > 15F) {
+            if (++dataStorage.aim4verbose > 3) flag(data, "dy=" + deltaYaw);
+        } else if (dataStorage.aim4verbose > 0) dataStorage.aim4verbose--;
     }
 
     public void checkAimbotHeuristic3(final PlayerMoveEvent event, final PlayerData playerData, final PlayerData.DataStorage dataStorage) {
@@ -88,27 +178,22 @@ public class KillAura extends Check implements Listener {
 
     public void checkAimbotHeuristic1(final PlayerMoveEvent event, final PlayerData playerData, final PlayerData.DataStorage dataStorage) {
         final float deltaYaw = event.getTo().getYaw() % 360F - event.getFrom().getYaw() % 360F;
-        final float deltaPitch = event.getTo().getPitch() - event.getFrom().getPitch();
+        final float deltaPitch = Math.abs(event.getTo().getPitch() - event.getFrom().getPitch());
 
+        final double expander = Math.pow(2, 24);
         if (deltaYaw == 0 || deltaPitch == 0) return;
 
-        if (deltaYaw < 20F && deltaPitch < 5F) {
-            dataStorage.pitchSamples.add(deltaPitch);
-        }
+        final float gcd = MathUtil.gcd((long) (deltaPitch * expander), (long) (dataStorage.aim1lastpitch * expander));
 
-        if (dataStorage.pitchSamples.size() == 100) {
-            List<Float> distinctList = dataStorage.pitchSamples.stream().distinct().collect(Collectors.toList());
-            int duplicates = dataStorage.pitchSamples.size() - distinctList.size();
-
-            if (duplicates < 7) {
-                if (++dataStorage.aimHeuristic1Verbose > 3) {
-                    flag(playerData, "duplicates=" + duplicates);
-                }
-            } else {
-                dataStorage.aimHeuristic1Verbose -= dataStorage.aimHeuristic1Verbose > 0 ? 1 : 0;
+        if (gcd < 131072) {
+            if (++dataStorage.aimHeuristic1Verbose > 20) {
+                dataStorage.aimHeuristic1Verbose = 0;
+                flag(playerData, "gcd=" + gcd);
             }
-
-            dataStorage.pitchSamples.clear();
+        } else {
+            if (dataStorage.aimHeuristic1Verbose > 0) dataStorage.aimHeuristic1Verbose--;
         }
+
+        dataStorage.aim1lastpitch = deltaPitch;
     }
 }
