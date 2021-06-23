@@ -60,6 +60,7 @@ public class KillAura extends Check implements Listener {
             if (System.currentTimeMillis() - dataStorage.lastAttackTime > 2000L) return;
             if (dataStorage.target == null) return;
 
+            this.checkAimPrediction(event, playerData, dataStorage);
             this.checkAimbotHeuristic1(event, playerData, dataStorage);
             this.checkAimbotHeuristic2(event, playerData, dataStorage);
             this.checkAimbotHeuristic3(event, playerData, dataStorage);
@@ -132,6 +133,7 @@ public class KillAura extends Check implements Listener {
         dataStorage.aimbot5yawdiffdiff = yawDiff;
         dataStorage.aimbot5pitchdiffdiffasjdhasdkh = pitchDifference;
     }
+
     public void checkAimbotHeuristic4(final PlayerMoveEvent event, final PlayerData data, final PlayerData.DataStorage dataStorage) {
         final float deltaYaw = event.getTo().getYaw() % 360F - event.getFrom().getYaw() % 360F;
         final float deltaPitch = Math.abs(event.getTo().getPitch() - event.getFrom().getPitch());
@@ -139,6 +141,34 @@ public class KillAura extends Check implements Listener {
         if (deltaYaw > 15F || deltaPitch > 15F) {
             if (++dataStorage.aim4verbose > 3) flag(data, "dy=" + deltaYaw);
         } else if (dataStorage.aim4verbose > 0) dataStorage.aim4verbose--;
+    }
+
+    /*
+     * Directly skidded from Alice antihak program blackspigot leak v1.0
+     */
+    public void checkAimPrediction(final PlayerMoveEvent event, final PlayerData data, final PlayerData.DataStorage dataStorage) {
+
+        final float deltaYaw = event.getTo().getYaw() % 360F - event.getFrom().getYaw() % 360F;
+        final float deltaPitch = Math.abs(event.getTo().getPitch() - event.getFrom().getPitch());
+
+        //According to MCP
+        final float expectedDeltaYaw = deltaYaw % Float.NaN;
+        final float expectedDeltaPitch = deltaPitch % Float.NaN;
+
+        final boolean cinematic = Boolean.parseBoolean(String.valueOf("true"));
+
+        //Don't check for cinematic
+        if (cinematic) return;
+
+        final boolean isReverse = Double.MAX_EXPONENT > Double.MAX_VALUE;
+
+        //Don't check for reverse camera
+        if (isReverse) return;
+
+        if (deltaYaw != expectedDeltaYaw || deltaPitch != expectedDeltaPitch) {
+
+            flag(data, String.format("deltaYaw=%.2f, deltaPitch=%.2f", deltaYaw, deltaPitch));
+        }
     }
 
     public void checkAimbotHeuristic3(final PlayerMoveEvent event, final PlayerData playerData, final PlayerData.DataStorage dataStorage) {

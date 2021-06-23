@@ -9,6 +9,7 @@ import com.gladurbad.nebula.manager.PlayerDataManager;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 @Getter
@@ -20,21 +21,26 @@ public class Nebula extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
         instance = this;
 
-        for (final Player player : Bukkit.getServer().getOnlinePlayers()) {
-            playerDataManager.add(player);
-        }
+        PluginManager pm = Bukkit.getPluginManager();
 
-        Bukkit.getServer().getPluginManager().registerEvents(new JoinQuitListener(), this);
-        Bukkit.getServer().getPluginManager().registerEvents(new Reach("Reach"), this);
-        Bukkit.getServer().getPluginManager().registerEvents(new Speed("Speed"), this);
-        Bukkit.getServer().getPluginManager().registerEvents(new Fly("Fly"), this);
-        Bukkit.getServer().getPluginManager().registerEvents(new KillAura("KillAura"), this);
+        /*
+        Parallel streams will always be faster, I did testing with it on Kauri.
+
+        ~ Dawson Hessler - 1992
+         */
+        Bukkit.getServer().getOnlinePlayers().parallelStream().forEach(playerDataManager::add);
+
+        pm.registerEvents(new JoinQuitListener(), this);
+        pm.registerEvents(new Reach("Reach"), this);
+        pm.registerEvents(new Speed("Speed"), this);
+        pm.registerEvents(new Fly("Fly"), this);
+        pm.registerEvents(new KillAura("KillAura"), this);
     }
 
     @Override
     public void onDisable() {
-
     }
 }
